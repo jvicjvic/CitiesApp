@@ -11,20 +11,23 @@ struct CityListView: View {
     @State var viewModel: CityListVM
 
     var body: some View {
-        VStack {
-            List {
-                ForEach(viewModel.cities) { city in
-                    Text(city.name)
+        NavigationStack {
+            VStack {
+                List {
+                    ForEach(viewModel.filteredCities) { city in
+                        Text(city.displayName)
+                    }
                 }
+                .listStyle(PlainListStyle())
             }
-            .listStyle(PlainListStyle())
-        }
-        .task {
-            do {
-                try await viewModel.connect()
-            }
-            catch {
-                print("ERROR")
+            .searchable(text: $viewModel.searchText)
+            .task {
+                do {
+                    try await viewModel.connect()
+                }
+                catch {
+                    print("ERROR")
+                }
             }
         }
     }
