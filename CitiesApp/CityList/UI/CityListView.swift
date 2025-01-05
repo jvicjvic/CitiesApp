@@ -15,12 +15,15 @@ struct CityListView: View {
             VStack {
                 List {
                     ForEach(viewModel.filteredCities) { city in
-                        Text(city.displayName)
+                        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: city))) {
+                            Text(city.displayName)
+                        }
                     }
                 }
                 .listStyle(PlainListStyle())
             }
             .searchable(text: $viewModel.searchText)
+            .navigationTitle("Cities")
             .task {
                 do {
                     try await viewModel.connect()
