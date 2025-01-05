@@ -3,7 +3,7 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         VStack {
-            CityListView(viewModel: CityListVM(service: CityService()))
+            CityListView(viewModel: CityListVM(repository: CityRepository(service: CityService())))
         }
     }
 }

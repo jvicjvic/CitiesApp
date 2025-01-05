@@ -13,20 +13,34 @@ final class CityListVM {
     var filteredCities: [City] = []
     var searchText: String = "" {
         didSet {
-            filterCities()
+            Task {
+                await debounceSearch()
+            }
         }
     }
-    private let service: CityService
-
-    init(service: CityService) { // TODO: replace with repo
-        self.service = service
+    private let repository: CityRepository
+    private var searchTask: Task<Void, Never>?
+    
+    init(repository: CityRepository) {
+        self.repository = repository
     }
-
+    
     func connect() async throws {
-        cities = try await service.fetchLocalCities() //service.fetchCities()
+        cities = try await repository.fetchCities()
         filterCities()
     }
-
+    
+    @MainActor
+    private func debounceSearch() async {
+        searchTask?.cancel()
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
+            if !Task.isCancelled {
+                filterCities()
+            }
+        }
+    }
+    
     private func filterCities() {
         if searchText.isEmpty {
             filteredCities = cities

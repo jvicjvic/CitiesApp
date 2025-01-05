@@ -34,5 +34,5 @@ struct CityListView: View {
 }
 
 #Preview {
-    CityListView(viewModel: CityListVM(service: CityService()))
+    CityListView(viewModel: CityListVM(repository: CityRepository(service: CityService())))
 }
