@@ -50,7 +50,7 @@ private struct CityRow: View {
     @State var viewModel: CityItemVM
 
     var body: some View {
-        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: viewModel.city))) {
+        NavigationLink(destination: CityDetailView(city: viewModel.city)) {
             VStack {
                 Divider()
                 HStack {

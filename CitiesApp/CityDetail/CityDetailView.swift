@@ -4,12 +4,23 @@ import MapKit
 struct CityDetailView: View {
     @State var viewModel: CityDetailVM
     @State private var showingInformation = false
+    @State private var cameraPosition: MapCameraPosition
+
+    init(city: City) {
+        _viewModel = State(initialValue: CityDetailVM(city: city))
+        _cameraPosition = State(initialValue: .region(
+            MKCoordinateRegion(
+                center: city.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            )
+        ))
+    }
     
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Map(coordinateRegion: $viewModel.region, annotationItems: [viewModel.city]) { city in
-                    MapMarker(coordinate: city.coordinate)
+                Map(position: $cameraPosition) {
+                    Marker(viewModel.city.name, coordinate: viewModel.city.coordinate)
                 }
                 .frame(height: 300)
                 
