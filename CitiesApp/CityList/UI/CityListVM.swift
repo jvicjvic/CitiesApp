@@ -6,6 +6,7 @@
 //
 
 import Observation
+import Foundation
 
 @Observable
 @MainActor
@@ -29,8 +30,20 @@ final class CityListVM {
     }
     
     func connect() async throws {
-        cities = try await repository.fetchCities().map { CityItemVM(city: $0, repository: repository) }
+        let fetchedCities = try await fetchCities()
+
+        var newCitiesVM: [CityItemVM] = []
+        for newCity in fetchedCities {
+            await Task.yield()
+            try Task.checkCancellation()
+            newCitiesVM.append(CityItemVM(city: newCity, repository: repository))
+        }
+        cities = newCitiesVM
         filterCities()
+    }
+
+    private func fetchCities() async throws -> [City] {
+        return try await repository.fetchCities()
     }
 
     func didSearch() {

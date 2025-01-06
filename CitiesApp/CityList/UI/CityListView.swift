@@ -9,6 +9,7 @@ import SwiftUI
 
 struct CityListView: View {
     @State var viewModel: CityListVM
+    @State private var hasLoaded = false
 
     var body: some View {
         NavigationStack {
@@ -20,19 +21,17 @@ struct CityListView: View {
             .searchable(text: $viewModel.searchText)
             .navigationTitle("Cities")
             .task {
-                do {
-                    try await viewModel.connect()
-                }
-                catch {
-                    print("ERROR")
+                if !hasLoaded {
+                    do {
+                        try await viewModel.connect()
+                        hasLoaded = true
+                    } catch {
+                        print("Error: \(error.localizedDescription)")
+                    }
                 }
             }
         }
     }
-}
-
-#Preview {
-    CityListView(viewModel: CityListVM(repository: CityRepository(service: CityService())))
 }
 
 private struct CityListContent: View {
@@ -41,25 +40,46 @@ private struct CityListContent: View {
     var body: some View {
         LazyVStack {
             ForEach(viewModel.filteredCityViewModels) { cityVM in
-                NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: cityVM.city))) {
-                    CityRow(viewModel: cityVM)
-                    Text(cityVM.displayName)
-                }
+                CityRow(viewModel: cityVM)
             }
         }
     }
 }
 
 private struct CityRow: View {
-    var viewModel: CityItemVM
+    @State var viewModel: CityItemVM
 
     var body: some View {
-        Button(action: {
-            viewModel.toggleFavorite(viewModel.city.id)
-        }) {
-            Image(systemName: viewModel.imageIconName)
-                .foregroundColor(.yellow)
+        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: viewModel.city))) {
+            VStack {
+                Divider()
+                HStack {
+                    Button(action: {
+                        viewModel.toggleFavorite(viewModel.city.id)
+                    }) {
+                        Image(systemName: viewModel.imageIconName)
+                            .foregroundColor(.yellow)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+
+                    VStack(alignment: .leading) {
+                        Text(viewModel.displayName)
+                        Text("Lat: \(viewModel.city.coord.lat), Lon: \(viewModel.city.coord.lon)")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+            }
+
         }
         .buttonStyle(PlainButtonStyle())
     }
+}
+
+
+#Preview {
+    CityListView(viewModel: CityListVM(repository: CityRepository(service: CityService())))
 }
