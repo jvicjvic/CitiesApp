@@ -13,13 +13,20 @@ struct CityListView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                List {
-                    ForEach(viewModel.filteredCities) { city in
-                        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: city))) {
-                            Text(city.displayName)
+                List(viewModel.filteredCityViewModels) { cityVM in
+                    HStack {
+                        Button(action: {
+                            viewModel.toggleFavorite(cityVM.id)
+                        }) {
+                            Image(systemName: viewModel.isFavorite(cityVM.id) ? "star.fill" : "star")
+                                .foregroundColor(.yellow)
+                        }
+                        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: cityVM.city))) {
+                            Text(cityVM.displayName)
                         }
                     }
                 }
+                .id(UUID())
                 .listStyle(PlainListStyle())
             }
             .searchable(text: $viewModel.searchText)

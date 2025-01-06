@@ -8,13 +8,14 @@
 import Observation
 
 @Observable
+@MainActor
 final class CityListVM {
-    var cities: [City] = []
-    var filteredCities: [City] = []
+    @ObservationIgnored var cities: [CityItemVM] = []
+    var filteredCityViewModels: [CityItemVM] = []
     var searchText: String = "" {
         didSet {
-            Task {
-                await debounceSearch()
+            if oldValue != searchText {
+                didSearch()
             }
         }
     }
@@ -26,29 +27,58 @@ final class CityListVM {
     }
     
     func connect() async throws {
-        cities = try await repository.fetchCities()
+        cities = try await repository.fetchCities().map { CityItemVM(city: $0) }
         filterCities()
     }
-    
-    @MainActor
-    private func debounceSearch() async {
-        searchTask?.cancel()
-        searchTask = Task {
-            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms
-            if !Task.isCancelled {
-                filterCities()
+
+    func didSearch() {
+            searchTask?.cancel()
+            searchTask = Task {
+                // debounce search
+                try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
+                if !Task.isCancelled {
+                    filterCities()
+                }
             }
-        }
     }
-    
+
     private func filterCities() {
         if searchText.isEmpty {
-            filteredCities = cities
+            filteredCityViewModels = cities
             return
         }
         
-        filteredCities = cities.filter {
-            $0.displayName.lowercased().hasPrefix(searchText.lowercased())
+        filteredCityViewModels = cities.filter {
+            $0.startsWith(searchText)
         }
+    }
+    
+    func toggleFavorite(_ cityId: Int) {
+        repository.toggleFavorite(cityId)
+    }
+    
+    func isFavorite(_ cityId: Int) -> Bool {
+        repository.isFavorite(cityId)
+    }
+}
+
+
+final class CityItemVM: Identifiable {
+    let city: City
+
+    init(city: City) {
+        self.city = city
+    }
+
+    var displayName: String {
+        city.displayName
+    }
+
+    var id: Int {
+        city.id
+    }
+
+    func startsWith(_ prefix: String) -> Bool {
+        displayName.lowercased().hasPrefix(prefix.lowercased())
     }
 }

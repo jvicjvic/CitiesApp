@@ -17,4 +17,12 @@ class CityRepository {
         let allCities = try await service.fetchLocalCities()
         return allCities.sorted { $0.name < $1.name }
     }
+
+    func toggleFavorite(_ cityId: Int) {
+        service.toggleFavorite(cityId)
+    }
+
+    func isFavorite(_ cityId: Int) -> Bool {
+        service.getFavoriteCities().contains(cityId)
+    }
 }
