@@ -12,6 +12,8 @@ import Observation
 final class CityListVM {
     @ObservationIgnored var cities: [CityItemVM] = []
     var filteredCityViewModels: [CityItemVM] = []
+
+    private var searchTask: Task<Void, Never>?
     var searchText: String = "" {
         didSet {
             if oldValue != searchText {
@@ -19,15 +21,15 @@ final class CityListVM {
             }
         }
     }
+
     private let repository: CityRepository
-    private var searchTask: Task<Void, Never>?
-    
+
     init(repository: CityRepository) {
         self.repository = repository
     }
     
     func connect() async throws {
-        cities = try await repository.fetchCities().map { CityItemVM(city: $0) }
+        cities = try await repository.fetchCities().map { CityItemVM(city: $0, repository: repository) }
         filterCities()
     }
 
@@ -52,33 +54,41 @@ final class CityListVM {
             $0.startsWith(searchText)
         }
     }
-    
-    func toggleFavorite(_ cityId: Int) {
-        repository.toggleFavorite(cityId)
-    }
-    
-    func isFavorite(_ cityId: Int) -> Bool {
-        repository.isFavorite(cityId)
-    }
 }
 
-
+@Observable
+@MainActor
 final class CityItemVM: Identifiable {
     let city: City
-
-    init(city: City) {
-        self.city = city
-    }
 
     var displayName: String {
         city.displayName
     }
 
-    var id: Int {
-        city.id
+    var imageIconName = "star"
+
+    private let repository: CityRepository
+
+    init(city: City, repository: CityRepository) {
+        self.city = city
+        self.repository = repository
+        updateIcon()
     }
 
     func startsWith(_ prefix: String) -> Bool {
         displayName.lowercased().hasPrefix(prefix.lowercased())
+    }
+
+    func toggleFavorite(_ cityId: Int) {
+        repository.toggleFavorite(cityId)
+        updateIcon()
+    }
+
+    func isFavorite(_ cityId: Int) -> Bool {
+        repository.isFavorite(cityId)
+    }
+
+    private func updateIcon() {
+        self.imageIconName = isFavorite(city.id) ? "star.fill" : "star"
     }
 }

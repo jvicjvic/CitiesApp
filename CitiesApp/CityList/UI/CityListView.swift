@@ -13,21 +13,9 @@ struct CityListView: View {
     var body: some View {
         NavigationStack {
             VStack {
-                List(viewModel.filteredCityViewModels) { cityVM in
-                    HStack {
-                        Button(action: {
-                            viewModel.toggleFavorite(cityVM.id)
-                        }) {
-                            Image(systemName: viewModel.isFavorite(cityVM.id) ? "star.fill" : "star")
-                                .foregroundColor(.yellow)
-                        }
-                        NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: cityVM.city))) {
-                            Text(cityVM.displayName)
-                        }
-                    }
+                ScrollView {
+                    CityListContent(viewModel: viewModel)
                 }
-                .id(UUID())
-                .listStyle(PlainListStyle())
             }
             .searchable(text: $viewModel.searchText)
             .navigationTitle("Cities")
@@ -45,4 +33,33 @@ struct CityListView: View {
 
 #Preview {
     CityListView(viewModel: CityListVM(repository: CityRepository(service: CityService())))
+}
+
+private struct CityListContent: View {
+    var viewModel: CityListVM
+
+    var body: some View {
+        LazyVStack {
+            ForEach(viewModel.filteredCityViewModels) { cityVM in
+                NavigationLink(destination: CityDetailView(viewModel: CityDetailVM(city: cityVM.city))) {
+                    CityRow(viewModel: cityVM)
+                    Text(cityVM.displayName)
+                }
+            }
+        }
+    }
+}
+
+private struct CityRow: View {
+    var viewModel: CityItemVM
+
+    var body: some View {
+        Button(action: {
+            viewModel.toggleFavorite(viewModel.city.id)
+        }) {
+            Image(systemName: viewModel.imageIconName)
+                .foregroundColor(.yellow)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
 }
