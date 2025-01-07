@@ -32,6 +32,7 @@ final class CityListVM {
     }
 
     func connect() async throws {
+        config = CityListConfig(isLoading: true)
         didSearch()
     }
 
@@ -43,6 +44,7 @@ final class CityListVM {
             if !Task.isCancelled {
                 do {
                     filteredCities = try await self.filterCities()
+                    config = CityListConfig(isLoading: false)
                 }
                 catch {
                     print("Error: \(error)")

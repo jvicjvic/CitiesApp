@@ -12,15 +12,7 @@ struct CityListView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack {
-                    ForEach(viewModel.filteredCities) { item in
-                        CityListRow(config: item,
-                                didTapMoreInfo: viewModel.didTapMoreInfo,
-                                didTapFavorite: viewModel.didTapFavorite)
-                    }
-                }
-            }
+            CityListContentView(viewModel: viewModel)
             .searchable(text: $viewModel.searchText)
             .navigationTitle("Cities")
             .task {
@@ -34,6 +26,26 @@ struct CityListView: View {
                    onDismiss: viewModel.didDismissMoreInfo) {
                 if let selectedCity = viewModel.config.selectedCity {
                     CityInformationView(config: .init(cityName: selectedCity.displayName, country: selectedCity.country, coord: selectedCity.coord))
+                }
+            }
+        }
+    }
+}
+
+struct CityListContentView: View {
+    var viewModel: CityListVM
+
+    var body: some View {
+        if viewModel.config.isLoading {
+            ProgressView()
+        } else {
+            ScrollView {
+                LazyVStack {
+                    ForEach(viewModel.filteredCities) { item in
+                        CityListRow(config: item,
+                                didTapMoreInfo: viewModel.didTapMoreInfo,
+                                didTapFavorite: viewModel.didTapFavorite)
+                    }
                 }
             }
         }
