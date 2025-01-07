@@ -2,12 +2,15 @@ import SwiftUI
 import MapKit
 
 struct CityDetailView: View {
-    @State var viewModel: CityDetailVM
-    @State private var showingInformation = false
+    let config: CityInformationConfig
     @State private var cameraPosition: MapCameraPosition
 
     init(city: City) {
-        _viewModel = State(initialValue: CityDetailVM(city: city))
+        self.config = CityInformationConfig(
+            cityName: city.name,
+            country: city.country,
+            coord: city.coord
+        )
         _cameraPosition = State(initialValue: .region(
             MKCoordinateRegion(
                 center: city.coordinate,
@@ -20,21 +23,24 @@ struct CityDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Map(position: $cameraPosition) {
-                    Marker(viewModel.city.name, coordinate: viewModel.city.coordinate)
+                    Marker(config.cityName, coordinate: CLLocationCoordinate2D(
+                        latitude: config.coord.lat,
+                        longitude: config.coord.lon
+                    ))
                 }
                 .frame(height: 300)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Group {
-                        Text(viewModel.city.name)
+                        Text(config.cityName)
                             .font(.title)
-                        Text(viewModel.city.country)
+                        Text(config.country)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
                         HStack {
-                            Text("Lat: \(viewModel.formattedCoordinates.lat)")
-                            Text("Lon: \(viewModel.formattedCoordinates.lon)")
+                            Text("Lat: \(config.formattedCoordinates.lat)")
+                            Text("Lon: \(config.formattedCoordinates.lon)")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -43,10 +49,7 @@ struct CityDetailView: View {
                 .padding()
             }
         }
-        .navigationTitle(viewModel.city.name)
+        .navigationTitle(config.cityName)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingInformation) {
-            CityInformationView(viewModel: viewModel)
-        }
     }
 } 

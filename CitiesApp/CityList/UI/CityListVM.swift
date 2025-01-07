@@ -11,12 +11,11 @@ import Foundation
 @Observable
 @MainActor
 final class CityListVM {
-    var showingInformation = false
-    var selectedCity: City?
-
-    @ObservationIgnored var cities: [CityRowVM] = []
-    var filteredCityViewModels: [CityRowVM] = []
-
+    var config = CityListConfig()
+    
+    @ObservationIgnored var cities: [CityRowConfig] = []
+    var filteredCities: [CityRowConfig] = []
+    
     private var searchTask: Task<Void, Never>?
     var searchText: String = "" {
         didSet {
@@ -31,22 +30,9 @@ final class CityListVM {
     init(repository: CityRepository) {
         self.repository = repository
     }
-    
+
     func connect() async throws {
-        let fetchedCities = try await fetchCities()
-
-        var newCitiesVM: [CityRowVM] = []
-        for newCity in fetchedCities {
-            await Task.yield()
-            try Task.checkCancellation()
-            newCitiesVM.append(CityRowVM(city: newCity, repository: repository))
-        }
-        cities = newCitiesVM
-        filterCities()
-    }
-
-    private func fetchCities() async throws -> [City] {
-        return try await repository.fetchCities()
+        didSearch()
     }
 
     func didSearch() {
@@ -55,66 +41,41 @@ final class CityListVM {
             // debounce search
             try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
             if !Task.isCancelled {
-                filterCities()
+                do {
+                    filteredCities = try await self.filterCities()
+                }
+                catch {
+                    print("Error: \(error)")
+                }
             }
         }
     }
 
-    private func filterCities() {
-        if searchText.isEmpty {
-            filteredCityViewModels = cities
-            return
+    private nonisolated func filterCities() async throws -> [CityRowConfig] {
+        let fetchedCities: [City]
+
+        if await searchText.isEmpty {
+            fetchedCities = try await repository.fetchCities()
+        } else {
+            fetchedCities = try await repository.fetchCities(startsWith: searchText)
         }
-        
-        filteredCityViewModels = cities.filter {
-            $0.startsWith(searchText)
+
+        let repo = await repository
+
+        return fetchedCities.map { newCity in
+            CityRowConfig(city: newCity, isFavorite: repo.isFavorite(newCity.id))
         }
+    }
+
+    func didTapFavorite(_ city: City) {
+        repository.toggleFavorite(city.id)
     }
 
     func didTapMoreInfo(_ city: City) {
-        selectedCity = city
-        showingInformation = true
+        config = CityListConfig(isShowingMoreInfo: true, selectedCity: city)
     }
 
     func didDismissMoreInfo() {
-        selectedCity = nil
-        showingInformation = false
-    }
-}
-
-@Observable
-@MainActor
-final class CityRowVM: Identifiable {
-    let city: City
-
-    var displayName: String {
-        city.displayName
-    }
-
-    var imageIconName = "star"
-
-    private let repository: CityRepository
-
-    init(city: City, repository: CityRepository) {
-        self.city = city
-        self.repository = repository
-        updateIcon()
-    }
-
-    func startsWith(_ prefix: String) -> Bool {
-        displayName.lowercased().hasPrefix(prefix.lowercased())
-    }
-
-    func toggleFavorite(_ cityId: Int) {
-        repository.toggleFavorite(cityId)
-        updateIcon()
-    }
-
-    func isFavorite(_ cityId: Int) -> Bool {
-        repository.isFavorite(cityId)
-    }
-
-    private func updateIcon() {
-        self.imageIconName = isFavorite(city.id) ? "star.fill" : "star"
+        config = CityListConfig()
     }
 }

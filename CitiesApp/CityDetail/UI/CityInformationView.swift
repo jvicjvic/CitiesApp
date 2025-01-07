@@ -1,20 +1,20 @@
 import SwiftUI
 
 struct CityInformationView: View {
-    let viewModel: CityDetailVM
+    let config: CityInformationConfig
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationStack {
             List {
                 Section("Location") {
-                    InfoRow(title: "City", value: viewModel.city.name)
-                    InfoRow(title: "Country", value: viewModel.city.country)
+                    InfoRow(title: "City", value: config.cityName)
+                    InfoRow(title: "Country", value: config.country)
                 }
                 
                 Section("Coordinates") {
-                    InfoRow(title: "Latitude", value: viewModel.formattedCoordinates.lat)
-                    InfoRow(title: "Longitude", value: viewModel.formattedCoordinates.lon)
+                    InfoRow(title: "Latitude", value: config.formattedCoordinates.lat)
+                    InfoRow(title: "Longitude", value: config.formattedCoordinates.lon)
                 }
             }
             .navigationTitle("City Information")
@@ -42,4 +42,4 @@ struct InfoRow: View {
             Text(value)
         }
     }
-} 
+}

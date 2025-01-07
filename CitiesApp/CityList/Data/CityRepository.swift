@@ -14,8 +14,14 @@ class CityRepository {
     }
 
     func fetchCities() async throws -> [City] {
-        let allCities = try await service.fetchLocalCities()
+        let allCities = try await service.fetchCities()
         return allCities.sorted { $0.name < $1.name }
+    }
+
+    func fetchCities(startsWith prefix: String) async throws -> [City] {
+        try await fetchCities().filter {
+            $0.displayName.lowercased().hasPrefix(prefix.lowercased())
+        }
     }
 
     func toggleFavorite(_ cityId: Int) {
