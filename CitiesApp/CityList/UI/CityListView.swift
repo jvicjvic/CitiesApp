@@ -15,7 +15,11 @@ struct CityListView: View {
         NavigationStack {
             VStack {
                 ScrollView {
-                    CityListContent(viewModel: viewModel)
+                    LazyVStack {
+                        ForEach(viewModel.filteredCityViewModels) { cityVM in
+                            CityRow(viewModel: cityVM, didTapMoreInfo: viewModel.didTapMoreInfo)
+                        }
+                    }
                 }
             }
             .searchable(text: $viewModel.searchText)
@@ -30,24 +34,20 @@ struct CityListView: View {
                     }
                 }
             }
-        }
-    }
-}
-
-private struct CityListContent: View {
-    var viewModel: CityListVM
-
-    var body: some View {
-        LazyVStack {
-            ForEach(viewModel.filteredCityViewModels) { cityVM in
-                CityRow(viewModel: cityVM)
+            .sheet(isPresented: $viewModel.showingInformation,
+                   onDismiss: viewModel.didDismissMoreInfo) {
+                if let selectedCity = viewModel.selectedCity {
+                    CityInformationView(viewModel: CityDetailVM(city: selectedCity))
+                }
             }
         }
     }
 }
 
+
 private struct CityRow: View {
-    @State var viewModel: CityItemVM
+    @State var viewModel: CityRowVM
+    let didTapMoreInfo: (City) -> Void
 
     var body: some View {
         NavigationLink(destination: CityDetailView(city: viewModel.city)) {
@@ -71,9 +71,16 @@ private struct CityRow: View {
                     }
                     
                     Spacer()
+                    
+                    Button {
+                        didTapMoreInfo(viewModel.city)
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .foregroundColor(.blue)
+                    }
+                    .padding(.trailing)
                 }
             }
-
         }
         .buttonStyle(PlainButtonStyle())
     }

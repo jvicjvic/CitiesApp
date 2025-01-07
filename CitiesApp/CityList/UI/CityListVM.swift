@@ -11,8 +11,11 @@ import Foundation
 @Observable
 @MainActor
 final class CityListVM {
-    @ObservationIgnored var cities: [CityItemVM] = []
-    var filteredCityViewModels: [CityItemVM] = []
+    var showingInformation = false
+    var selectedCity: City?
+
+    @ObservationIgnored var cities: [CityRowVM] = []
+    var filteredCityViewModels: [CityRowVM] = []
 
     private var searchTask: Task<Void, Never>?
     var searchText: String = "" {
@@ -32,11 +35,11 @@ final class CityListVM {
     func connect() async throws {
         let fetchedCities = try await fetchCities()
 
-        var newCitiesVM: [CityItemVM] = []
+        var newCitiesVM: [CityRowVM] = []
         for newCity in fetchedCities {
             await Task.yield()
             try Task.checkCancellation()
-            newCitiesVM.append(CityItemVM(city: newCity, repository: repository))
+            newCitiesVM.append(CityRowVM(city: newCity, repository: repository))
         }
         cities = newCitiesVM
         filterCities()
@@ -47,14 +50,14 @@ final class CityListVM {
     }
 
     func didSearch() {
-            searchTask?.cancel()
-            searchTask = Task {
-                // debounce search
-                try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
-                if !Task.isCancelled {
-                    filterCities()
-                }
+        searchTask?.cancel()
+        searchTask = Task {
+            // debounce search
+            try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
+            if !Task.isCancelled {
+                filterCities()
             }
+        }
     }
 
     private func filterCities() {
@@ -67,11 +70,21 @@ final class CityListVM {
             $0.startsWith(searchText)
         }
     }
+
+    func didTapMoreInfo(_ city: City) {
+        selectedCity = city
+        showingInformation = true
+    }
+
+    func didDismissMoreInfo() {
+        selectedCity = nil
+        showingInformation = false
+    }
 }
 
 @Observable
 @MainActor
-final class CityItemVM: Identifiable {
+final class CityRowVM: Identifiable {
     let city: City
 
     var displayName: String {

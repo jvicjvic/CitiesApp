@@ -39,23 +39,6 @@ struct CityDetailView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     }
-
-                    Group {
-                        Button(action: {
-                            showingInformation = true
-                        }) {
-                            HStack {
-                                Text("More Info")
-                                Image(systemName: "info.circle")
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                        }
-                    }
-                    .padding(.top)
                 }
                 .padding()
             }
