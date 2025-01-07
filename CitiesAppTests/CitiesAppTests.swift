@@ -9,28 +9,76 @@ import XCTest
 @testable import CitiesApp
 
 final class CitiesAppTests: XCTestCase {
-
+    var repository: CityRepository!
+    var mockService: MockCityService!
+    
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        mockService = MockCityService()
+        repository = CityRepository(service: mockService)
     }
-
+    
     override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        repository = nil
+        mockService = nil
     }
+    
+    func testFetchCities() async throws {
+        let expectedCities = [
+            City(country: "US", name: "New York", id: 1, coord: Coordinates(lon: -74.006, lat: 40.7143)),
+            City(country: "UK", name: "London", id: 2, coord: Coordinates(lon: -0.1257, lat: 51.5085))
+        ]
+        mockService.mockCities = expectedCities
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
+        let cities = try await repository.fetchCities()
+
+        XCTAssertEqual(cities.count, 2)
+        XCTAssertEqual(cities[0].name, "London") // Should be sorted alphabetically
+        XCTAssertEqual(cities[1].name, "New York")
     }
+    
+    func testFetchCitiesWithFilter() async throws {
+        let expectedCities = [
+            City(country: "US", name: "New York", id: 1, coord: Coordinates(lon: -74.006, lat: 40.7143)),
+            City(country: "US", name: "New Orleans", id: 2, coord: Coordinates(lon: -90.0751, lat: 29.9546))
+        ]
+        mockService.mockCities = expectedCities
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+        let cities = try await repository.fetchCities(startsWith: "New")
+
+        XCTAssertEqual(cities.count, 2)
+        XCTAssertTrue(cities.allSatisfy { $0.name.hasPrefix("New") })
+    }
+    
+    func testToggleFavorite() async throws {
+        let city = City(country: "US", name: "New York", id: 1, coord: Coordinates(lon: -74.006, lat: 40.7143))
+        
+        repository.toggleFavorite(city)
+        
+        XCTAssertTrue(repository.isFavorite(city))
+        
+        repository.toggleFavorite(city)
+        
+        XCTAssertFalse(repository.isFavorite(city))
+    }
+}
+
+class MockCityService: CityServiceProtocol {
+    var mockCities: [City] = []
+    private var favoriteCities: Set<City> = []
+    
+    func fetchCities() async throws -> [City] {
+        return mockCities
+    }
+    
+    func getFavoriteCities() -> Set<City> {
+        return favoriteCities
+    }
+    
+    func toggleFavorite(_ city: City) {
+        if favoriteCities.contains(city) {
+            favoriteCities.remove(city)
+        } else {
+            favoriteCities.insert(city)
         }
     }
-
 }

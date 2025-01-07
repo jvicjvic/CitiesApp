@@ -7,11 +7,11 @@
 
 
 class CityRepository {
-    private let service: CityService
+    private let service: CityServiceProtocol
     private var cachedCities: [String: [City]]?
     private var sortedCachedCities: [City]?
 
-    init(service: CityService) {
+    init(service: CityServiceProtocol) {
         self.service = service
     }
 
