@@ -8,23 +8,43 @@
 
 class CityRepository {
     private let service: CityService
-    private var cachedCities: [City]?
+    private var cachedCities: [String: [City]]?
+    private var sortedCachedCities: [City]?
 
     init(service: CityService) {
         self.service = service
     }
 
     func fetchCities() async throws -> [City] {
-        if let cachedCities {
-            return cachedCities
+        if let sortedCachedCities {
+            return sortedCachedCities
         }
         let allCities = try await service.fetchCities().sorted { $0.name < $1.name }
-        cachedCities = allCities
+        
+        var citiesByFirstLetter: [String: [City]] = [:]
+        for city in allCities {
+            let firstLetter = String(city.name.prefix(1)).uppercased()
+            citiesByFirstLetter[firstLetter, default: []].append(city)
+        }
+        
+        cachedCities = citiesByFirstLetter
+        sortedCachedCities = allCities
         return allCities
     }
 
     func fetchCities(startsWith prefix: String) async throws -> [City] {
-        try await fetchCities().filter {
+        let uppercasePrefix = prefix.uppercased()
+        let firstLetter = String(uppercasePrefix.prefix(1))
+        
+        if cachedCities == nil {
+            _ = try await fetchCities()
+        }
+        
+        guard let citiesWithSameFirstLetter = cachedCities?[firstLetter] else {
+            return []
+        }
+        
+        return citiesWithSameFirstLetter.filter {
             $0.displayName.lowercased().hasPrefix(prefix.lowercased())
         }
     }

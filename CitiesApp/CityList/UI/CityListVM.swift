@@ -12,8 +12,6 @@ import Foundation
 @MainActor
 final class CityListVM {
     var config = CityListConfig()
-    
-    @ObservationIgnored var cities: [CityRowConfig] = []
     var filteredCities: [CityRowConfig] = []
     
     private var searchTask: Task<Void, Never>?
@@ -32,19 +30,22 @@ final class CityListVM {
     }
 
     func connect() async throws {
-        config = CityListConfig(isLoading: true)
         didSearch()
     }
 
     func didSearch() {
+        config = CityListConfig(isLoading: true)
         searchTask?.cancel()
         searchTask = Task {
             // debounce search
             try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
             if !Task.isCancelled {
                 do {
-                    filteredCities = try await self.filterCities()
-                    config = CityListConfig(isLoading: false)
+                    let list  = try await self.filterCities()
+                    if !Task.isCancelled {
+                        filteredCities = list
+                        config = CityListConfig(isLoading: false)
+                    }
                 }
                 catch {
                     print("Error: \(error)")
