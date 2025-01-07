@@ -2,8 +2,8 @@ import Foundation
 
 protocol CityServiceProtocol {
     func fetchCities() async throws -> [City]
-    func getFavoriteCities() -> Set<Int>
-    func toggleFavorite(_ cityId: Int)
+    func getFavoriteCities() -> Set<City>
+    func toggleFavorite(_ city: City)
 }
 
 class CityService: CityServiceProtocol {
@@ -36,18 +36,37 @@ class CityService: CityServiceProtocol {
         return try decoder.decode(T.self, from: data)
     }
 
-    func getFavoriteCities() -> Set<Int> {
-        let array = UserDefaults.standard.array(forKey: favoritesKey) as? [Int] ?? []
-        return Set(array)
+    func getFavoriteCities() -> Set<City> {
+        guard let data = UserDefaults.standard.data(forKey: favoritesKey) else {
+            return Set()
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
+            let cities = try decoder.decode(Set<City>.self, from: data)
+            return cities
+        } catch {
+            print("Error decoding favorite cities: \(error)")
+            return Set()
+        }
     }
     
-    func toggleFavorite(_ cityId: Int) {
+    func toggleFavorite(_ city: City) {
         var favorites = getFavoriteCities()
-        if favorites.contains(cityId) {
-            favorites.remove(cityId)
+        if favorites.contains(city) {
+            favorites.remove(city)
         } else {
-            favorites.insert(cityId)
+            favorites.insert(city)
         }
-        UserDefaults.standard.set(Array(favorites), forKey: favoritesKey)
+        
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let data = try encoder.encode(favorites)
+            UserDefaults.standard.set(data, forKey: favoritesKey)
+        } catch {
+            print("Error encoding favorite cities: \(error)")
+        }
     }
 } 

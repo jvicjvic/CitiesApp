@@ -49,11 +49,22 @@ class CityRepository {
         }
     }
 
-    func toggleFavorite(_ cityId: Int) {
-        service.toggleFavorite(cityId)
+    func toggleFavorite(_ city: City) {
+        service.toggleFavorite(city)
     }
 
-    func isFavorite(_ cityId: Int) -> Bool {
-        service.getFavoriteCities().contains(cityId)
+    func isFavorite(_ city: City) -> Bool {
+        service.getFavoriteCities().contains(city)
+    }
+
+    func fetchFavoriteCities(startsWith prefix: String? = nil) async -> [City] {
+        let favoriteCities = service.getFavoriteCities()
+        guard let prefix else {
+            return favoriteCities.sorted { $0.name < $1.name }
+        }
+        
+        return favoriteCities.filter {
+            $0.displayName.lowercased().hasPrefix(prefix.lowercased())
+        }.sorted { $0.name < $1.name }
     }
 }

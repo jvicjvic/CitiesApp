@@ -13,21 +13,32 @@ struct CityListView: View {
     var body: some View {
         NavigationStack {
             CityListContentView(viewModel: viewModel)
-            .searchable(text: $viewModel.searchText)
-            .navigationTitle("Cities")
-            .task {
-                do {
-                    try await viewModel.connect()
-                } catch {
-                    print("Error: \(error.localizedDescription)")
+                .searchable(text: $viewModel.searchText)
+                .navigationTitle("Cities")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            viewModel.toggleFavoritesOnly()
+                        } label: {
+                            Text("Favorites")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(viewModel.showFavoritesOnly ? .accentColor : nil)
+                    }
+                }   
+                .task {
+                    do {
+                        try await viewModel.connect()
+                    } catch {
+                        print("Error: \(error.localizedDescription)")
+                    }
                 }
-            }
-            .sheet(isPresented: $viewModel.config.isShowingMoreInfo,
-                   onDismiss: viewModel.didDismissMoreInfo) {
-                if let selectedCity = viewModel.config.selectedCity {
-                    CityInformationView(config: .init(cityName: selectedCity.displayName, country: selectedCity.country, coord: selectedCity.coord))
+                .sheet(isPresented: $viewModel.config.isShowingMoreInfo,
+                       onDismiss: viewModel.didDismissMoreInfo) {
+                    if let selectedCity = viewModel.config.selectedCity {
+                        CityInformationView(config: .init(cityName: selectedCity.displayName, country: selectedCity.country, coord: selectedCity.coord))
+                    }
                 }
-            }
         }
     }
 }

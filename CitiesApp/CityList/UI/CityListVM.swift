@@ -13,6 +13,7 @@ import Foundation
 final class CityListVM {
     var config = CityListConfig()
     var filteredCities: [CityRowConfig] = []
+    var showFavoritesOnly: Bool = false
     
     private var searchTask: Task<Void, Never>?
     var searchText: String = "" {
@@ -41,7 +42,7 @@ final class CityListVM {
             try? await Task.sleep(nanoseconds: 500_000_000) // 500ms
             if !Task.isCancelled {
                 do {
-                    let list  = try await self.filterCities()
+                    let list = try await showFavoritesOnly ? filterFavoriteCities() : filterCities()
                     if !Task.isCancelled {
                         filteredCities = list
                         config = CityListConfig(isLoading: false)
@@ -66,12 +67,26 @@ final class CityListVM {
         let repo = await repository
 
         return fetchedCities.map { newCity in
-            CityRowConfig(city: newCity, isFavorite: repo.isFavorite(newCity.id))
+            CityRowConfig(city: newCity, isFavorite: repo.isFavorite(newCity))
+        }
+    }
+
+    private nonisolated func filterFavoriteCities() async throws -> [CityRowConfig] {
+        let fetchedCities: [City]
+
+        if await searchText.isEmpty {
+            fetchedCities = await repository.fetchFavoriteCities()
+        } else {
+            fetchedCities = await repository.fetchFavoriteCities(startsWith: searchText)
+        }
+
+        return fetchedCities.map { newCity in
+            CityRowConfig(city: newCity, isFavorite: true)
         }
     }
 
     func didTapFavorite(_ city: City) {
-        repository.toggleFavorite(city.id)
+        repository.toggleFavorite(city)
     }
 
     func didTapMoreInfo(_ city: City) {
@@ -80,5 +95,10 @@ final class CityListVM {
 
     func didDismissMoreInfo() {
         config = CityListConfig()
+    }
+
+    func toggleFavoritesOnly() {
+        showFavoritesOnly.toggle()
+        didSearch()
     }
 }
