@@ -11,7 +11,7 @@ struct CityListView: View {
     @State var viewModel: CityListVM
 
     var body: some View {
-        NavigationStack {
+        NavigationSplitView() {
             CityListContentView(viewModel: viewModel)
                 .searchable(text: $viewModel.searchText)
                 .navigationTitle("Cities")
@@ -39,6 +39,8 @@ struct CityListView: View {
                         CityInformationView(config: .init(cityName: selectedCity.displayName, country: selectedCity.country, coord: selectedCity.coord))
                     }
                 }
+        } detail: {
+            Text("No city selected").font(.subheadline).foregroundStyle(.gray)
         }
     }
 }
