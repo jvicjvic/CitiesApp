@@ -56,34 +56,28 @@ final class CityListVM {
     }
 
     /// Does the fetching and filtering of the cities
-    private nonisolated func filterCities() async throws -> [CityRowConfig] {
+    private nonisolated func filterCities(favorites: Bool = false) async throws -> [CityRowConfig] {
         let fetchedCities: [City]
-
+        
         if await searchText.isEmpty {
-            fetchedCities = try await repository.fetchCities()
+            fetchedCities = favorites ? 
+                await repository.fetchFavoriteCities() :
+                try await repository.fetchCities()
         } else {
-            fetchedCities = try await repository.fetchCities(startsWith: searchText)
+            fetchedCities = favorites ?
+                await repository.fetchFavoriteCities(startsWith: searchText) :
+                try await repository.fetchCities(startsWith: searchText)
         }
 
         let repo = await repository
 
         return fetchedCities.map { newCity in
-            CityRowConfig(city: newCity, isFavorite: repo.isFavorite(newCity))
+            CityRowConfig(city: newCity, isFavorite: favorites ? true : repo.isFavorite(newCity))
         }
     }
 
     private nonisolated func filterFavoriteCities() async throws -> [CityRowConfig] {
-        let fetchedCities: [City]
-
-        if await searchText.isEmpty {
-            fetchedCities = await repository.fetchFavoriteCities()
-        } else {
-            fetchedCities = await repository.fetchFavoriteCities(startsWith: searchText)
-        }
-
-        return fetchedCities.map { newCity in
-            CityRowConfig(city: newCity, isFavorite: true)
-        }
+        return try await filterCities(favorites: true)
     }
 
     func didTapFavorite(_ city: City) {
