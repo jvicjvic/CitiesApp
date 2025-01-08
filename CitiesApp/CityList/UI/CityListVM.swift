@@ -55,6 +55,7 @@ final class CityListVM {
         }
     }
 
+    /// Does the fetching and filtering of the cities
     private nonisolated func filterCities() async throws -> [CityRowConfig] {
         let fetchedCities: [City]
 
